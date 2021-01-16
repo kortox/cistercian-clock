@@ -20,6 +20,24 @@ pub struct App {
 type GlyphComponent = [f64; 4];
 type Glyph = Vec<GlyphComponent>;
 
+struct Flippy {
+    x_scalar: f64,
+    y_scalar: f64,
+    x_shift: f64,
+    y_shift: f64,
+}
+
+impl Default for Flippy {
+    fn default() -> Flippy {
+        Flippy {
+            x_scalar: 1.0,
+            y_scalar: 1.0,
+            x_shift: 0.0,
+            y_shift: 0.0,
+        }
+    }
+}
+
 // Expects numbers used in dates & times i.e. in [0, 59]
 fn split_date_comp_to_digits(n: u32) -> [u32; 2] {
     assert!(n < 60);
@@ -27,6 +45,28 @@ fn split_date_comp_to_digits(n: u32) -> [u32; 2] {
     let tens = n / 10;
     return [tens, ones];
 }
+
+// fn draw_two_digits(mut x_scalar: f64, date_comps_as_digits: [u32; 2], all_glyphs: Vec<Glyph>, c: Context, gl: &mut GlGraphics) {
+//     // Draw top two entries
+//     // let mut reversed_digits = date_comps_as_digits.to_owned();
+//     // reversed_digits.reverse();
+//     // for digit in &reversed_digits {
+//     for digit in date_comps_as_digits.iter().rev() {
+//         let curr_trans = c.transform.trans(curr_x, curr_y);
+//         let idx: usize = *digit as usize;
+//         for glyph_component in all_glyphs[idx as usize].to_owned() {
+//             let maybe_flipped = [
+//                 glyph_component[0] * x_scalar,
+//                 glyph_component[1],
+//                 glyph_component[2] * x_scalar,
+//                 glyph_component[3],
+//             ];
+//             line(fg_color, 1.0, maybe_flipped, curr_trans, gl);
+//         }
+//         x_scalar = -1.0;
+//         // curr_x += 15.0;
+//     }
+// }
 
 impl App {
     fn render(&mut self, args: &RenderArgs) {
@@ -74,6 +114,8 @@ impl App {
             clear(bg_color, gl);
 
             let date_comps = vec![
+                // [2, 2],
+                // [2,2],
                 split_date_comp_to_digits(right_now.time().second() as u32),
                 split_date_comp_to_digits(right_now.time().minute() as u32),
                 // split_date_comp_to_digits(right_now.time().hour() as u32),
@@ -83,27 +125,37 @@ impl App {
                 // split_date_comp_to_digits((right_now.date().year() / 100) as u32),
             ];
 
+            let flippies = [
+                [
+                    Flippy{ ..Default::default()},
+                    Flippy{ x_scalar: -1.0, ..Default::default()},
+                ],
+                [
+                    Flippy{  y_scalar: -1.0, y_shift: 10.0, ..Default::default()},
+                    Flippy{ x_scalar: -1.0, y_scalar: -1.0, y_shift: 10.0, ..Default::default()},
+                ]
+            ];
+
             let mut curr_x = init_x;
             let mut curr_y = init_y;
             for (comp_pos, date_comps_as_digits) in date_comps.iter().enumerate() {
                 // Draw top two entries
-                let mut x_scalar: f64 = 1.0;
                 // let mut reversed_digits = date_comps_as_digits.to_owned();
                 // reversed_digits.reverse();
                 // for digit in &reversed_digits {
-                for digit in date_comps_as_digits.iter().rev() {
+                for (dig_pos, digit) in date_comps_as_digits.iter().rev().enumerate() {
                     let curr_trans = c.transform.trans(curr_x, curr_y);
                     let idx: usize = *digit as usize;
+                    let flippy = &flippies[comp_pos][dig_pos];
                     for glyph_component in ALL_GLYPHS[idx as usize].to_owned() {
                         let maybe_flipped = [
-                            glyph_component[0] * x_scalar,
-                            glyph_component[1],
-                            glyph_component[2] * x_scalar,
-                            glyph_component[3],
+                            glyph_component[0] * flippy.x_scalar + flippy.x_shift,
+                            glyph_component[1] * flippy.y_scalar + flippy.y_shift,
+                            glyph_component[2] * flippy.x_scalar + flippy.x_shift,
+                            glyph_component[3] * flippy.y_scalar + flippy.y_shift,
                         ];
                         line(fg_color, 1.0, maybe_flipped, curr_trans, gl);
                     }
-                    x_scalar = -1.0;
                     // curr_x += 15.0;
                 }
                 if comp_pos + 1 < date_comps.len() {
