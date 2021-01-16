@@ -66,7 +66,7 @@ impl App {
 
         // center of window
         // let (center_x, center_y) = (args.window_size[0] / 2.0, args.window_size[1] / 2.0);
-        let (init_x, init_y) = (10.0, args.window_size[1] / 2.0);
+        let (init_x, init_y) = (15.0, args.window_size[1] / 2.0);
         let right_now = self.right_now;
 
         self.gl.draw(args.viewport(), |c, gl| {
@@ -74,27 +74,45 @@ impl App {
             clear(bg_color, gl);
 
             let date_comps = vec![
-                split_date_comp_to_digits(right_now.time().hour() as u32),
-                split_date_comp_to_digits(right_now.time().minute() as u32),
                 split_date_comp_to_digits(right_now.time().second() as u32),
-                split_date_comp_to_digits(right_now.date().day() as u32),
-                split_date_comp_to_digits(right_now.date().month() as u32),
-                split_date_comp_to_digits((right_now.date().year() / 100) as u32),
-                split_date_comp_to_digits((right_now.date().year() % 100) as u32),
+                split_date_comp_to_digits(right_now.time().minute() as u32),
+                // split_date_comp_to_digits(right_now.time().hour() as u32),
+                // split_date_comp_to_digits(right_now.date().day() as u32),
+                // split_date_comp_to_digits(right_now.date().month() as u32),
+                // split_date_comp_to_digits((right_now.date().year() % 100) as u32),
+                // split_date_comp_to_digits((right_now.date().year() / 100) as u32),
             ];
 
             let mut curr_x = init_x;
-            let curr_y = init_y;
-            for date_comps_as_digits in &date_comps {
-                for digit in date_comps_as_digits {
+            let mut curr_y = init_y;
+            for (comp_pos, date_comps_as_digits) in date_comps.iter().enumerate() {
+                // Draw top two entries
+                let mut x_scalar: f64 = 1.0;
+                // let mut reversed_digits = date_comps_as_digits.to_owned();
+                // reversed_digits.reverse();
+                // for digit in &reversed_digits {
+                for digit in date_comps_as_digits.iter().rev() {
                     let curr_trans = c.transform.trans(curr_x, curr_y);
                     let idx: usize = *digit as usize;
                     for glyph_component in ALL_GLYPHS[idx as usize].to_owned() {
-                        line(fg_color, 1.0, glyph_component, curr_trans, gl);
+                        let maybe_flipped = [
+                            glyph_component[0] * x_scalar,
+                            glyph_component[1],
+                            glyph_component[2] * x_scalar,
+                            glyph_component[3],
+                        ];
+                        line(fg_color, 1.0, maybe_flipped, curr_trans, gl);
                     }
-                    curr_x += 15.0;
+                    x_scalar = -1.0;
+                    // curr_x += 15.0;
                 }
-                curr_x += 5.0;
+                if comp_pos + 1 < date_comps.len() {
+                    curr_y += 10.0;
+                    let curr_trans = c.transform.trans(curr_x, curr_y);
+                    line(fg_color, 1.0, ZERO_VERT, curr_trans, gl);
+                    curr_y += 10.0;
+                }
+                // curr_x += 5.0;
             }
         });
     }
