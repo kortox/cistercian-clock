@@ -3,6 +3,7 @@ extern crate graphics;
 extern crate opengl_graphics;
 extern crate piston;
 
+use chrono::prelude::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{GlGraphics, OpenGL};
 use piston::event_loop::{EventSettings, Events};
@@ -27,9 +28,9 @@ impl App {
         let bg_color: [f32; 4] = BLACK;
         let fg_color: [f32; 4] = WHITE;
 
-        let square = rectangle::square(0.0, 0.0, 50.0);
         let rotation = self.rotation;
-        let (x, y) = (args.window_size[0] / 2.0, args.window_size[1] / 2.0);
+        // center of window
+        let (center_x, center_y) = (args.window_size[0] / 2.0, args.window_size[1] / 2.0);
 
         self.gl.draw(args.viewport(), |c, gl| {
             // Clear the screen.
@@ -37,12 +38,14 @@ impl App {
 
             let transform = c
                 .transform
-                .trans(x, y)
+                .trans(center_x, center_y)
                 .rot_rad(rotation)
                 .trans(-25.0, -25.0);
 
+            let center_trans = c.transform.trans(center_x, center_y);
+
             // Draw a box rotating around the middle of the screen.
-            rectangle(fg_color, square, transform, gl);
+            line(fg_color, 1.0, [0.0, 0.0, 15.0, 15.0],center_trans , gl);
         });
     }
 
@@ -53,11 +56,19 @@ impl App {
 }
 
 fn main() {
+    let local: DateTime<Local> = Local::now();
+
+    println!("hour: {}", local.time().hour());
+    println!("minute: {}", local.time().minute());
+    println!("day: {}", local.date().day());
+    println!("month: {}", local.date().month());
+    println!("year: {}", local.date().year());
+
     // Change this to OpenGL::V2_1 if not working.
     let opengl = OpenGL::V3_2;
 
     // Create an Glutin window.
-    let mut window: Window = WindowSettings::new("spinning-square", [200, 200])
+    let mut window: Window = WindowSettings::new("cistercian clock", [200, 200])
         .graphics_api(opengl)
         .exit_on_esc(true)
         .build()
